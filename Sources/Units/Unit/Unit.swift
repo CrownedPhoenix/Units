@@ -138,7 +138,7 @@ public struct Unit {
                     if quantities[quantity] == 0 { quantities.removeValue(forKey: quantity) }
                 }
             }),
-            coefficient: coefficient,
+            coefficient: coefficient * subUnits.reduce(1, { $0 * $1.ke }), // TODO:
             constant: constant
         )
     }
@@ -382,6 +382,14 @@ public struct Unit {
             return [defined: 1]
         case let .composite(subUnits):
             return subUnits
+        }
+    }
+
+    var isComposable: Bool {
+        switch type {
+            case .none: true
+            case let .defined(definedUnit): definedUnit.constant == 0
+            case let .composite(subUnits): subUnits.keys.allSatisfy({ $0.constant == 0 })
         }
     }
 
