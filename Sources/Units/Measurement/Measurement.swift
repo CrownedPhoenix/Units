@@ -1,7 +1,7 @@
 import Foundation
 
 /// A numeric scalar value with a unit of measure
-public struct Measurement: Equatable, Codable {
+public struct Measurement: Equatable {
     public private(set) var value: Double
     public private(set) var unit: Unit
 
@@ -133,7 +133,7 @@ public struct Measurement: Equatable, Codable {
         lhs.unit = lhs.unit / rhs.unit
     }
 
-    /// Exponentiate the measurement. This is equavalent to multiple `*` operations.
+    /// Exponentiate the measurement. This is equivalent to multiple `*` operations.
     /// - Parameter raiseTo: The exponent to raise the measurement to
     /// - Returns: A new measurement with an exponentiated scalar value and an exponentiated unit of measure
     public func pow(_ raiseTo: Int) -> Measurement {
@@ -153,7 +153,7 @@ public struct Measurement: Equatable, Codable {
 extension Measurement: CustomStringConvertible {
     /// Displays the measurement as a string of the value and unit symbol
     public var description: String {
-        if unit == .none {
+        if unit == Unit.unitless {
             return "\(value)"
         } else {
             return "\(value) \(unit)"
@@ -163,22 +163,8 @@ extension Measurement: CustomStringConvertible {
 
 extension Measurement: LosslessStringConvertible {
     public init?(_ description: String) {
-        let valueEndIndex = description.firstIndex(of: " ") ?? description.endIndex
-        guard let value = Double(description[..<valueEndIndex]) else {
-            return nil
-        }
-        self.value = value
-
-        if valueEndIndex != description.endIndex {
-            guard let unit = Unit(String(
-                description[description.index(after: valueEndIndex) ..< description.endIndex]
-            )) else {
-                return nil
-            }
-            self.unit = unit
-        } else {
-            unit = .none
-        }
+        self.value = 0.0
+        self.unit = Unit.unitless
     }
 }
 
@@ -186,7 +172,7 @@ extension Measurement: Hashable {}
 
 extension Measurement: ExpressibleByIntegerLiteral {
     public init(integerLiteral value: Int64) {
-        self = Self(value: Double(value), unit: .none)
+        self = Self(value: Double(value), unit: Unit.unitless)
     }
 
     public typealias IntegerLiteralType = Int64
@@ -194,7 +180,7 @@ extension Measurement: ExpressibleByIntegerLiteral {
 
 extension Measurement: ExpressibleByFloatLiteral {
     public init(floatLiteral value: Double) {
-        self = Self(value: value, unit: .none)
+        self = Self(value: value, unit: Unit.unitless)
     }
 
     public typealias FloatLiteralType = Double

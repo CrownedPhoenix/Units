@@ -1,232 +1,67 @@
-import Foundation
+import func Foundation.pow
 
-/// Unit models a unit of measure. Each unit must specify a name, symbol, dimension, and conversion factors.
-///
-/// A unit can compute a conversion to any other unit of its dimension using its specified conversion factors.
-/// Units may be multiplied and divided, resulting in "composite" units, which retain all the characteristics
-/// of a basic, predefined unit.
-///
-/// This type is backed by a global registry that allows units to be encoded and decoded using their symbol.
-/// It also is given a large number of static members for easy access to this package's predefined units.
-public struct Unit {
-    private let type: UnitType
+/// A unit type that is composed of any combination of base dimensions and a coefficient
+public struct Unit: Hashable, Equatable, Sendable {
+    public let dimension: [Dimension: Int]
+    public let coefficient: Double
+    public let constant: Double
+    var composite: Bool
 
-    /// Singleton representing the lack of a unit
-    public static var none: Unit {
-        Unit(type: .none)
+    init(dimension: [Dimension: Int], coefficient: Double = 1, constant: Double = 0, composite: Bool = false) {
+        self.dimension = dimension
+        self.coefficient = coefficient
+        self.constant = constant
+        self.composite = composite
     }
 
-    /// Create a unit from the symbol. This symbol is compared to the global registry, decomposed if necessary,
-    /// and the relevant unit is initialized.
-    /// - Parameter symbol: A string defining the unit to retrieve. This can be the symbol of a defined unit
-    /// or a complex unit symbol that combines basic units with `*`, `/`, or `^`.
-    public init(fromSymbol symbol: String) throws {
-        let symbolContainsOperator = OperatorSymbols.allCases.contains { arithSymbol in
-            symbol.contains(arithSymbol.rawValue)
-        }
-        if symbolContainsOperator {
-            let compositeUnits = try Registry.instance.compositeUnitsFromSymbol(symbol: symbol)
-            if compositeUnits.isEmpty {
-                self = .none
-            } else {
-                self.init(composedOf: compositeUnits)
-            }
-        } else {
-            let definedUnit = try Registry.instance.getUnit(bySymbol: symbol)
-            self.init(definedBy: definedUnit)
-        }
+    public static func ==(_ lhs: Self, _ rhs: Self) -> Bool {
+        lhs.dimension == rhs.dimension
+        && lhs.coefficient == rhs.coefficient
+        && lhs.constant == rhs.constant
     }
 
-    /// Retrieve a unit by name. This name is compared to the global registry and the relevant unit is initialized.
-    /// Only defined units are returned - complex unit name equations are not supported.
-    ///
-    /// - Parameter symbol: A string name of the unit to retrieve. This cannot be a complex equation of names.
-    public init(fromName name: String) throws {
-        let definedUnit = try Registry.instance.getUnit(byName: name)
-        self.init(definedBy: definedUnit)
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(dimension)
+        hasher.combine(coefficient)
+        hasher.combine(constant)
     }
+}
 
-    /// Create a unit from the defined unit object.
-    /// - Parameter definedBy: A defined unit to wrap
-    internal init(definedBy: DefinedUnit) {
-        type = .defined(definedBy)
-    }
-
-    /// Create a new from the sub-unit dictionary.
-    /// - Parameter subUnits: A dictionary of defined units and exponents. If this dictionary has only a single unit with an exponent of one,
-    /// we return that defined unit directly.
-    internal init(composedOf subUnits: [DefinedUnit: Int]) {
-        if subUnits.count == 1, let subUnit = subUnits.first, subUnit.value == 1 {
-            type = .defined(subUnit.key)
-        } else {
-            type = .composite(subUnits)
-        }
-    }
-
-    private init(type: UnitType) {
-        self.type = type
-    }
-
-    /// Define a unit extension without adding it to the registry. The resulting unit object should be retained
-    /// and passed to the callers that may want to use it.
-    ///
-    /// This unit can be used for arithmatic, conversions, and is encoded correctly. However, since it is
-    /// not part of the global registry it will not be decoded, will not be included in the `allDefined()`
-    /// method, and cannot not be retrieved using `Unit(fromSymbol:)`.
-    ///
-    /// This method is considered "safe" because it does not modify the global unit registry.
-    ///
-    /// - Parameters:
-    ///   - name: The string name of the unit.
-    ///   - symbol: The string symbol of the unit. Symbols may not contain the characters `*`, `/`, or `^`.
-    ///   - dimension: The unit dimensionality as a dictionary of quantities and their respective exponents.
-    ///   - coefficient: The value to multiply a base unit of this dimension when converting it to this unit.
-    ///   For base units, this is 1.
-    ///   - constant: The value to add to a base unit when converting it to this unit. For units without scaling
-    ///   differences, this is 0. This is added after the coefficient is multiplied according to order-of-operations.
-    /// - Returns: The unit that was defined.
-    public static func define(
-        name: String,
-        symbol: String,
-        dimension: [Quantity: Int],
-        coefficient: Double = 1,
-        constant: Double = 0
-    ) throws -> Unit {
-        return try Unit(
-            definedBy: .init(
-                name: name,
-                symbol: symbol,
-                dimension: dimension,
-                coefficient: coefficient,
-                constant: constant
-            )
-        )
-    }
-
-    /// **Careful!** Register a new unit to the global registry. Unless you need deserialization support for this unit,
-    /// or support to look up this unit from a different memory-space, we suggest that `define` is used instead.
-    ///
-    /// By using this method, the unit is added to the global registry so it will be deserialized correctly, will be included
-    /// in the `allDefined()` and `Unit(fromSymbol)` methods, and will be available to everyone accessing
-    /// this package in your runtime environment.
-    ///
-    /// - Parameters:
-    ///   - name: The string name of the unit.
-    ///   - symbol: The string symbol of the unit. Symbols may not contain the characters `*`, `/`, or `^`.
-    ///   - dimension: The unit dimensionality as a dictionary of quantities and their respective exponents.
-    ///   - coefficient: The value to multiply a base unit of this dimension when converting it to this unit.
-    ///   For base units, this is 1.
-    ///   - constant: The value to add to a base unit when converting it to this unit. For units without scaling
-    ///   differences, this is 0. This is added after the coefficient is multiplied according to order-of-operations.
-    /// - Returns: The unit definition that now exists in the registry.
-    @discardableResult
-    public static func register(
-        name: String,
-        symbol: String,
-        dimension: [Quantity: Int],
-        coefficient: Double = 1,
-        constant: Double = 0
-    ) throws -> Unit {
-        try Registry.instance.addUnit(
-            name: name,
-            symbol: symbol,
-            dimension: dimension,
-            coefficient: coefficient,
-            constant: constant
-        )
-        return try Unit(fromSymbol: symbol)
-    }
-
-    /// Get all defined units
-    /// - Returns: A list of units representing all that are defined in the registry
-    public static func allDefined() -> [Unit] {
-        Registry.instance.allUnits()
-    }
-
-    /// The dimension of the unit in terms of base quanties
-    public var dimension: [Quantity: Int] {
-        switch type {
-        case .none:
-            return [:]
-        case let .defined(definition):
-            return definition.dimension
-        case let .composite(subUnits):
-            var dimensions: [Quantity: Int] = [:]
-            for (subUnit, exp) in subUnits {
-                let subDimensions = subUnit.dimension.mapValues { value in
-                    exp * value
-                }
-                dimensions.merge(subDimensions) { existingExp, subDimensionExp in
-                    existingExp + subDimensionExp
-                }
-            }
-            return dimensions.filter { _, value in
-                value != 0
-            }
-        }
-    }
-
-    /// The string symbol of the unit
-    public var symbol: String {
-        switch type {
-        case .none:
-            return "none"
-        case let .defined(definition):
-            return definition.symbol
-        case let .composite(subUnits):
-            return serializeSymbolicEquation(
-                of: subUnits,
-                symbolPath: \DefinedUnit.symbol
-            )
-        }
-    }
-
-    /// The string name of the unit
-    public var name: String {
-        switch type {
-        case .none:
-            return "no unit"
-        case let .defined(definition):
-            return definition.name
-        case let .composite(subUnits):
-            return serializeSymbolicEquation(
-                of: subUnits,
-                symbolPath: \DefinedUnit.name,
-                spaceAroundOperators: true
-            )
-        }
-    }
-
-    public func dimensionDescription() -> String {
-        return serializeSymbolicEquation(
-            of: dimension,
-            symbolPath: \Quantity.rawValue
-        )
-    }
-
-    // MARK: - Arithmatic
+// MARK: - Arithmatic
+public extension Unit {
 
     /// Multiply the units.
     /// - Parameters:
     ///   - lhs: The left-hand-side unit
     ///   - rhs: The right-hand-side unit
     /// - Returns: A unit modeling the product of the left-hand-side and right-hand-side units
-    public static func * (lhs: Unit, rhs: Unit) -> Unit {
-        let lhsUnits = lhs.subUnits
-        let rhsUnits = rhs.subUnits
+    static func * (coefficient: Double, unit: Self) -> Self {
+        Self(
+            dimension: unit.dimension,
+            coefficient: unit.coefficient * coefficient,
+            constant: unit.constant
+        )
+    }
 
-        var subUnits = lhsUnits
-        subUnits.merge(rhsUnits) { lhsUnitExp, rhsUnitExp in
+    /// Multiply the units.
+    /// - Parameters:
+    ///   - lhs: The left-hand-side unit
+    ///   - rhs: The right-hand-side unit
+    /// - Returns: A unit modeling the product of the left-hand-side and right-hand-side units
+    static func * (lhs: Self, rhs: Self) -> Self {
+        var newDimension = lhs.dimension
+        newDimension.merge(rhs.dimension) { lhsUnitExp, rhsUnitExp in
             lhsUnitExp + rhsUnitExp
         }
-        subUnits = subUnits.filter { _, value in
+        newDimension = newDimension.filter { _, value in
             value != 0
         }
-        if subUnits.isEmpty {
-            return Unit.none
-        } else {
-            return Unit(composedOf: subUnits)
-        }
+        return Self(
+            dimension: newDimension,
+            coefficient: lhs.coefficient * rhs.coefficient,
+            constant: lhs.constant + rhs.constant,
+            composite: true
+        )
     }
 
     /// Divide the units.
@@ -234,51 +69,49 @@ public struct Unit {
     ///   - lhs: The left-hand-side unit
     ///   - rhs: The right-hand-side unit
     /// - Returns: A unit modeling the left-hand-side unit divided by the right-hand-side unit.
-    public static func / (lhs: Unit, rhs: Unit) -> Unit {
-        let lhsUnits = lhs.subUnits
-        let rhsUnits = rhs.subUnits
-
-        let negRhsUnits = rhsUnits.mapValues { rhsUnitExp in
+    static func / (lhs: Self, rhs: Self) -> Self {
+        let invertedRhsDimension = rhs.dimension.mapValues { rhsUnitExp in
             -1 * rhsUnitExp
         }
 
-        var subUnits = lhsUnits
-        subUnits.merge(negRhsUnits) { lhsUnitExp, negRhsUnitExp in
+        var newDimension = lhs.dimension
+        newDimension.merge(invertedRhsDimension) { lhsUnitExp, negRhsUnitExp in
             lhsUnitExp + negRhsUnitExp
         }
-        subUnits = subUnits.filter { _, value in
+        newDimension = newDimension.filter { _, value in
             value != 0
         }
-        if subUnits.isEmpty {
-            return Unit.none
-        } else {
-            return Unit(composedOf: subUnits)
-        }
+        return Self(
+            dimension: newDimension,
+            coefficient: lhs.coefficient / rhs.coefficient,
+            constant: lhs.constant + rhs.constant,
+            composite: true
+        )
     }
 
-    /// Exponentiate the unit. This is equavalent to multiple `*` operations.
+    /// Exponentiate the unit. This is equivalent to multiple `*` operations.
     /// - Parameter raiseTo: The exponent to raise the unit to
     /// - Returns: A new unit modeling the original raised to the provided power
-    public func pow(_ raiseTo: Int) -> Unit {
-        switch type {
-        case .none:
-            return .none
-        case let .defined(defined):
-            return Unit(composedOf: [defined: raiseTo])
-        case let .composite(subUnits):
-            let newSubUnits = subUnits.mapValues { subExp in
-                subExp * raiseTo
-            }
-            return Unit(composedOf: newSubUnits)
-        }
+    func pow(_ exponent: Int) -> Self {
+        Self(
+            dimension: dimension.reduce(
+                into: [Dimension: Int](),
+                { $0[$1.key] = $1.value * exponent }
+            ),
+            coefficient: Foundation.pow(coefficient, Double(exponent)),
+            constant: constant,
+            composite: true
+        )
     }
+}
 
-    // MARK: - Conversions
 
+// MARK: Conversions
+extension Unit {
     /// Tests that two units are of the same dimension
     /// - Parameter to: The unit to compare this one to
     /// - Returns: A bool indicating whether this unit and the input unit are of the same dimension
-    public func isDimensionallyEquivalent(to: Unit) -> Bool {
+    public func isDimensionallyEquivalent(to: Self) -> Bool {
         return dimension == to.dimension
     }
 
@@ -289,127 +122,70 @@ public struct Unit {
     /// - Parameter number: The amount of this unit to convert to the base units.
     /// - Returns: The equivalent amount in terms of the dimensional base units.
     func toBaseUnit(_ number: Double) throws -> Double {
-        switch type {
-        case .none:
-            return number
-        case let .defined(defined):
-            return number * defined.coefficient + defined.constant
-        case let .composite(subUnits):
-            var totalCoefficient = 1.0
-            for (subUnit, exponent) in subUnits {
-                guard subUnit.constant == 0 else { // subUnit must not have constant
-                    throw UnitError.invalidCompositeUnit(message: "Nonlinear unit prevents conversion: \(subUnit)")
-                }
-                totalCoefficient *= Foundation.pow(subUnit.coefficient, Double(exponent))
-            }
-            return number * totalCoefficient
+        if composite && constant != 0 {
+            throw UnitError.invalidCompositeUnit(message: "Composite, non-linear unit cannot be converted.")
         }
+        return number * coefficient + constant
     }
 
     /// Convert a provided amount of base dimensional units to this unit. This unit's conversion definition is used.
     ///
     /// For example, `Unit.kilometer.fromBaseUnit(5)` will return `0.005`, since `5m = 0.005km`
     ///
-    /// - Parameter number: The amount of base units to conver to this unit.
+    /// - Parameter number: The amount of base units to convert to this unit.
     /// - Returns: The equivalent amount in terms of this unit.
     func fromBaseUnit(_ number: Double) throws -> Double {
-        switch type {
-        case .none:
-            return number
-        case let .defined(defined):
-            return (number - defined.constant) / defined.coefficient
-        case let .composite(subUnits):
-            var totalCoefficient = 1.0
-            for (subUnit, exponent) in subUnits {
-                guard subUnit.constant == 0 else { // subUnit must not have constant
-                    throw UnitError.invalidCompositeUnit(message: "Nonlinear unit prevents conversion: \(subUnit)")
-                }
-                totalCoefficient *= Foundation.pow(subUnit.coefficient, Double(exponent))
-            }
-            return number / totalCoefficient
+        if composite && constant != 0 {
+            throw UnitError.invalidCompositeUnit(message: "Composite, non-linear unit cannot be converted.")
         }
-    }
-
-    // MARK: - Helpers
-
-    /// Returns a dictionary that represents the unique defined units and their exponents. For a
-    /// composite unit, this is simply the `subUnits`, but for a defined unit, this is `[self: 1]`
-    private var subUnits: [DefinedUnit: Int] {
-        switch type {
-        case .none:
-            return [:]
-        case let .defined(defined):
-            return [defined: 1]
-        case let .composite(subUnits):
-            return subUnits
-        }
-    }
-
-    /// The two possible types of unit - defined or composite
-    private enum UnitType: Sendable {
-        case none
-        case defined(DefinedUnit)
-        case composite([DefinedUnit: Int])
+        return (number - constant) / coefficient
     }
 }
 
-extension Unit: Equatable {
-    public static func == (lhs: Unit, rhs: Unit) -> Bool {
-        switch (lhs.type, rhs.type) {
-        case (.none, .none):
-            return true
-        case let (.defined(lhsDefined), .defined(rhsDefined)):
-            return lhsDefined == rhsDefined
-        case let (.composite(lhsSubUnits), .composite(rhsSubUnits)):
-            return lhsSubUnits == rhsSubUnits
-        default:
-            return false
-        }
+// MARK: Custom Units
+extension Unit {
+    public static func define(dimension name: String, symbol: String? = nil) -> Self {
+        Unit(dimension: [Dimension(name: name, symbol: name): 1])
     }
 }
 
-extension Unit: Hashable {
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(symbol)
-    }
-}
 
-extension Unit: CustomStringConvertible {
-    public var description: String {
-        switch type {
-        case .none:
-            return "none"
-        default:
-            return symbol
-        }
-    }
-}
-
+// MARK: Default Serialization
 extension Unit: LosslessStringConvertible {
+    public var symbol: String { description }
+
+    public var description: String {
+        let positiveExponents = dimension.compactMap({ $0.value > 0 ? (dim: $0.key, exp: $0.value) : nil })
+        let negativeExponents = dimension.compactMap({ $0.value < 0 ? (dim: $0.key, exp: -$0.value) : nil })
+        if positiveExponents.isEmpty, negativeExponents.isEmpty { return "" }
+
+        let numerator = positiveExponents.isEmpty ? "\(coefficient != 1 ? "" : "1")" : positiveExponents.map({ "\($0.dim)\($0.exp > 1 ? $0.exp.base10Superscript : "")" }).joined(separator: "·")
+        let denominator = negativeExponents.isEmpty ? "" : negativeExponents.map({ "\($0.dim)\($0.exp > 1 ? $0.exp.base10Superscript : "")" }).joined(separator: "·")
+
+        return "\(coefficient != 1 ? "(\(coefficient)\(positiveExponents.isEmpty ? "" : " ")" : "")\(numerator)\(negativeExponents.isEmpty ? "" : "/")\(denominator)\(coefficient != 1 ? ")" : "")"
+    }
+
     /// Initialize a unit from the provided string. This checks the input against the symbols stored
     /// in the registry. If no match is found, nil is returned.
     public init?(_ description: String) {
-        if description == "none" {
-            self = .none
-        } else {
-            guard let unit = try? Unit(fromSymbol: description) else {
-                return nil
-            }
-            self = unit
-        }
+        self = .unitless
     }
 }
 
-extension Unit: Codable {
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(symbol)
+extension Int {
+    var base10Superscript: String {
+        String(String(self).map({ intSuperscripts[$0] ?? $0 }))
     }
 
-    public init(from: Decoder) throws {
-        let symbol = try from.singleValueContainer().decode(String.self)
-        try self.init(fromSymbol: symbol)
-    }
 }
 
-extension Unit: Sendable {}
+fileprivate let intSuperscripts: [Character: Character] = [
+    "1": "\u{00B9}",
+    "2": "\u{00B2}",
+    "3": "\u{00B3}",
+    "4": "\u{2074}",
+    "5": "\u{2075}",
+    "6": "\u{2076}",
+    "7": "\u{2077}",
+    "8": "\u{2078}",
+    "9": "\u{2079}"]

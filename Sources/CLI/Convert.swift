@@ -50,12 +50,10 @@ extension Measurement: ExpressibleByArgument {
 
 extension Units.Unit: ExpressibleByArgument {
     public init?(argument: String) {
-        if let unit = try? Self(fromName: argument) {
+        if let unit = symbolLookup[argument] {
             self = unit
-        } else if let unit = try? Self(fromSymbol: argument) {
-            self = unit
-        } else {
-            return nil
-        }
+        } else { return nil }
     }
 }
+
+let symbolLookup: [String: Units.Unit] = [:]

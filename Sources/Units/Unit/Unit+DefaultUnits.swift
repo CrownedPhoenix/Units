@@ -1,248 +1,170 @@
-// TODO: Make more
-// - Concentration Mass
-// - Dispersion
-// - Information Storage: https://developer.apple.com/documentation/foundation/unitinformationstorage
+private extension Dimension {
+    var base: Unit { Unit(dimension: [self: 1]) }
+}
 
 public extension Unit {
-    // Provided as easy access to UnitRegistry default units
 
-    // MARK: Acceleration
-
-    static let standardGravity = Unit(definedBy: DefaultUnits.standardGravity)
+    static let unitless = Unit(dimension: [:])
 
     // MARK: Amount
+    static let mole = Dimension.mole.base
 
-    static let mole = Unit(definedBy: DefaultUnits.mole)
-    static let millimole = Unit(definedBy: DefaultUnits.millimole)
-    static let particle = Unit(definedBy: DefaultUnits.particle)
+    // MARK: Current
+    static let ampere = Dimension.ampere.base
+
+    // MARK: Length
+    static let meter = Dimension.meter.base
+
+    // MARK: Mass
+    static let kilogram = Dimension.kilogram.base
+
+    // MARK: Temperature
+    static let kelvin = Dimension.kelvin.base
+
+    // MARK: Time
+    static let second = Dimension.second.base
+
+
+    // MARK: Luminous Intensity
+    static let candela = Dimension.candela.base
 
     // MARK: Angle
+    static let radian = Dimension.radian.base
 
-    static let radian = Unit(definedBy: DefaultUnits.radian)
-    static let degree = Unit(definedBy: DefaultUnits.degree)
-    static let revolution = Unit(definedBy: DefaultUnits.revolution)
+    // MARK: Data
+    static let bit = Dimension.bit.base
+}
+
+
+public extension Unit {
+    // MARK: Acceleration
+    static let standardGravity = (9.80665 * .meter) / .second.pow(2)
+
+    // MARK: Amount
+    static let millimole = 0.001 * .mole
+    static let particle = 6.02214076e-23 * .mole
+
+    // MARK: Angle
+    static let degree = (180 / Double.pi) * .radian
+    static let revolution = 2 * Double.pi * .radian
 
     // MARK: Area
-
-    static let acre = Unit(definedBy: DefaultUnits.acre)
-    static let are = Unit(definedBy: DefaultUnits.are)
-    static let hectare = Unit(definedBy: DefaultUnits.hectare)
+    static let acre = 4046.8564224 * .meter.pow(2)
+    static let are = 100 * .meter
+    static let hectare = 100 * .are
 
     // MARK: Capacitance
-
-    static let farad = Unit(definedBy: DefaultUnits.farad)
+    static let farad = (.second.pow(4) * .ampere.pow(2)) / (.meter.pow(2) * .kilogram)
 
     // MARK: Charge
 
-    static let coulomb = Unit(definedBy: DefaultUnits.coulomb)
 
     // MARK: Current
-
-    static let ampere = Unit(definedBy: DefaultUnits.ampere)
-    static let microampere = Unit(definedBy: DefaultUnits.microampere)
-    static let milliampere = Unit(definedBy: DefaultUnits.milliampere)
-    static let kiloampere = Unit(definedBy: DefaultUnits.kiloampere)
-    static let megaampere = Unit(definedBy: DefaultUnits.megaampere)
+    static let microampere = 0.001 * .milliampere
+    static let milliampere = 0.001 * .ampere
+    static let kiloampere = 1000 * .ampere
+    static let megaampere = 1000 * .kiloampere
 
     // MARK: Data
-
-    static let bit = Unit(definedBy: DefaultUnits.bit)
-    static let byte = Unit(definedBy: DefaultUnits.byte)
-    static let kilobyte = Unit(definedBy: DefaultUnits.kilobyte)
-    static let megabyte = Unit(definedBy: DefaultUnits.megabyte)
-    static let gigabyte = Unit(definedBy: DefaultUnits.gigabyte)
-    static let petabyte = Unit(definedBy: DefaultUnits.petabyte)
+    static let byte = 8 * .bit
+    static let kilobyte = 1000 * .byte
+    static let megabyte = 1000 * .kilobyte
+    static let gigabyte = 1000 * .megabyte
+    static let terabyte = 1000 * .gigabyte
+    static let petabyte = 1000 * .terabyte
 
     // MARK: Electric Potential Difference
-
-    static let volt = Unit(definedBy: DefaultUnits.volt)
-    static let microvolt = Unit(definedBy: DefaultUnits.microvolt)
-    static let millivolt = Unit(definedBy: DefaultUnits.millivolt)
-    static let kilovolt = Unit(definedBy: DefaultUnits.kilovolt)
-    static let megavolt = Unit(definedBy: DefaultUnits.megavolt)
+    static let volt = (.kilogram * .meter.pow(2)) / (.second.pow(3) * .ampere)
+    static let microvolt = 0.001 * .millivolt
+    static let millivolt = 0.001 * .volt
+    static let kilovolt = 1000 * .volt
+    static let megavolt = 1000 * .kilovolt
 
     // MARK: Energy
+    static let joule = (.kilogram * .meter.pow(2)) / .second.pow(2)
+    static let kilojoule = 1000 * .joule
+    static let megajoule = 1000 * .kilojoule
 
-    static let joule = Unit(definedBy: DefaultUnits.joule)
-    static let kilojoule = Unit(definedBy: DefaultUnits.kilojoule)
-    static let megajoule = Unit(definedBy: DefaultUnits.megajoule)
-    static let calorie = Unit(definedBy: DefaultUnits.calorie)
-    static let kilocalorie = Unit(definedBy: DefaultUnits.kilocalorie)
-    static let btu = Unit(definedBy: DefaultUnits.btu)
-    static let kilobtu = Unit(definedBy: DefaultUnits.kilobtu)
-    static let megabtu = Unit(definedBy: DefaultUnits.megabtu)
-    static let therm = Unit(definedBy: DefaultUnits.therm)
-    static let electronVolt = Unit(definedBy: DefaultUnits.electronVolt)
+    static let calorie = 4.184 * .joule
+    static let kilocalorie = 1000 * .calorie
+
+    static let electronVolt = 1.602176634e-19 * .joule
 
     // MARK: Force
-
-    static let newton = Unit(definedBy: DefaultUnits.newton)
-    static let poundForce = Unit(definedBy: DefaultUnits.poundForce)
+    static let newton = (.kilogram * .meter) / .second.pow(2)
+    static let poundForce = 4.448222 * .newton
 
     // MARK: Frequency
-
-    static let hertz = Unit(definedBy: DefaultUnits.hertz)
-    static let nanohertz = Unit(definedBy: DefaultUnits.nanohertz)
-    static let microhertz = Unit(definedBy: DefaultUnits.microhertz)
-    static let millihertz = Unit(definedBy: DefaultUnits.millihertz)
-    static let kilohertz = Unit(definedBy: DefaultUnits.kilohertz)
-    static let megahertz = Unit(definedBy: DefaultUnits.megahertz)
-    static let gigahertz = Unit(definedBy: DefaultUnits.gigahertz)
-    static let terahertz = Unit(definedBy: DefaultUnits.terahertz)
+    static let nanohertz = 0.001 * .microhertz
+    static let microhertz = 0.001 * millihertz
+    static let millihertz = 0.001 * .hertz
+    static let hertz = Unit.second.pow(-1)
+    static let kilohertz = 1000 * .hertz
+    static let megahertz = 1000 * .kilohertz
+    static let gigahertz = 1000 * .megahertz
+    static let terahertz = 1000 * .gigahertz
 
     // MARK: Illuminance
-
-    static let lux = Unit(definedBy: DefaultUnits.lux)
-    static let footCandle = Unit(definedBy: DefaultUnits.footCandle)
-    static let phot = Unit(definedBy: DefaultUnits.phot)
+    static let lux = (.candela * .radian.pow(2)) / .meter.pow(2)
+    static let footCandle = 10.76 * .lux
+    static let phot = 10_000 * .lux
 
     // MARK: Inductance
-
-    static let henry = Unit(definedBy: DefaultUnits.henry)
+    static let henry = (.kilogram * .meter.pow(2)) / (.second.pow(2) * .ampere.pow(2))
 
     // MARK: Length
+    static let picometer = 0.01 * .nanometer
+    static let nanometer = 0.01 * .micrometer
+    static let micrometer = 0.01 * .millimeter
+    static let millimeter = 0.01 * .centimeter
+    static let centimeter = 0.01 * .meter
+    static let decameter = 10 * .meter
+    static let hectometer = 100 * .meter
+    static let kilometer = 1000 * .meter
+    static let megameter = 1000 * .kilometer
 
-    static let meter = Unit(definedBy: DefaultUnits.meter)
-    static let picometer = Unit(definedBy: DefaultUnits.picometer)
-    static let nanoometer = Unit(definedBy: DefaultUnits.nanoometer)
-    static let micrometer = Unit(definedBy: DefaultUnits.micrometer)
-    static let millimeter = Unit(definedBy: DefaultUnits.millimeter)
-    static let centimeter = Unit(definedBy: DefaultUnits.centimeter)
-    static let decameter = Unit(definedBy: DefaultUnits.decameter)
-    static let hectometer = Unit(definedBy: DefaultUnits.hectometer)
-    static let kilometer = Unit(definedBy: DefaultUnits.kilometer)
-    static let megameter = Unit(definedBy: DefaultUnits.megameter)
-    static let inch = Unit(definedBy: DefaultUnits.inch)
-    static let foot = Unit(definedBy: DefaultUnits.foot)
-    static let yard = Unit(definedBy: DefaultUnits.yard)
-    static let mile = Unit(definedBy: DefaultUnits.mile)
-    static let scandanavianMile = Unit(definedBy: DefaultUnits.scandanavianMile)
-    static let nauticalMile = Unit(definedBy: DefaultUnits.nauticalMile)
-    static let fathom = Unit(definedBy: DefaultUnits.fathom)
-    static let furlong = Unit(definedBy: DefaultUnits.furlong)
-    static let astronomicalUnit = Unit(definedBy: DefaultUnits.astronomicalUnit)
-    static let lightyear = Unit(definedBy: DefaultUnits.lightyear)
-    static let parsec = Unit(definedBy: DefaultUnits.parsec)
+    static let inch = 2.54 * .centimeter
+    static let foot = 12 * .inch
+    static let yard = 3 * .foot
+    static let mile = 5280 * .foot
 
     // MARK: Luminous Intensity
 
-    static let candela = Unit(definedBy: DefaultUnits.candela)
-
-    // MARK: Luminous Flux
-
-    static let lumen = Unit(definedBy: DefaultUnits.lumen)
-
-    // MARK: Magnetic Flux
-
-    static let weber = Unit(definedBy: DefaultUnits.weber)
-
-    // MARK: Magnetic Flux Density
-
-    static let tesla = Unit(definedBy: DefaultUnits.tesla)
-
     // MARK: Mass
-
-    static let kilogram = Unit(definedBy: DefaultUnits.kilogram)
-    static let picogram = Unit(definedBy: DefaultUnits.picogram)
-    static let nanogram = Unit(definedBy: DefaultUnits.nanogram)
-    static let microgram = Unit(definedBy: DefaultUnits.microgram)
-    static let milligram = Unit(definedBy: DefaultUnits.milligram)
-    static let centigram = Unit(definedBy: DefaultUnits.centigram)
-    static let decigram = Unit(definedBy: DefaultUnits.decigram)
-    static let gram = Unit(definedBy: DefaultUnits.gram)
-    static let metricTon = Unit(definedBy: DefaultUnits.metricTon)
-    static let carat = Unit(definedBy: DefaultUnits.carat)
-    static let ounce = Unit(definedBy: DefaultUnits.ounce)
-    static let pound = Unit(definedBy: DefaultUnits.pound)
-    static let stone = Unit(definedBy: DefaultUnits.stone)
-    static let shortTon = Unit(definedBy: DefaultUnits.shortTon)
-    static let troyOunces = Unit(definedBy: DefaultUnits.troyOunces)
-    static let slug = Unit(definedBy: DefaultUnits.slug)
+    static let pound = 0.45359237 * .kilogram
 
     // MARK: Power
-
-    static let watt = Unit(definedBy: DefaultUnits.watt)
-    static let femptowatt = Unit(definedBy: DefaultUnits.femptowatt)
-    static let picowatt = Unit(definedBy: DefaultUnits.picowatt)
-    static let nanowatt = Unit(definedBy: DefaultUnits.nanowatt)
-    static let microwatt = Unit(definedBy: DefaultUnits.microwatt)
-    static let milliwatt = Unit(definedBy: DefaultUnits.milliwatt)
-    static let kilowatt = Unit(definedBy: DefaultUnits.kilowatt)
-    static let megawatt = Unit(definedBy: DefaultUnits.megawatt)
-    static let gigawatt = Unit(definedBy: DefaultUnits.gigawatt)
-    static let terawatt = Unit(definedBy: DefaultUnits.terawatt)
-    static let horsepower = Unit(definedBy: DefaultUnits.horsepower)
-    static let tonRefrigeration = Unit(definedBy: DefaultUnits.tonRefrigeration)
+    static let femptowatt = 0.001 * .picowatt
+    static let picowatt = 0.001 * .nanowatt
+    static let nanowatt = 0.001 * .microwatt
+    static let microwatt = 0.001 * .milliwatt
+    static let milliwatt = 0.001 * .watt
+    static let watt = (.kilogram * .meter.pow(2)) / .second.pow(3)
+    static let kilowatt = 1000 * .watt
+    static let megawatt = 1000 * .kilowatt
+    static let gigawatt = 1000 * .megawatt
+    static let terawatt = 1000 * .gigawatt
 
     // MARK: Pressure
 
-    static let pascal = Unit(definedBy: DefaultUnits.pascal)
-    static let hectopascal = Unit(definedBy: DefaultUnits.hectopascal)
-    static let kilopascal = Unit(definedBy: DefaultUnits.kilopascal)
-    static let megapascal = Unit(definedBy: DefaultUnits.megapascal)
-    static let gigapascal = Unit(definedBy: DefaultUnits.gigapascal)
-    static let bar = Unit(definedBy: DefaultUnits.bar)
-    static let millibar = Unit(definedBy: DefaultUnits.millibar)
-    static let atmosphere = Unit(definedBy: DefaultUnits.atmosphere)
-    static let millimeterOfMercury = Unit(definedBy: DefaultUnits.millimeterOfMercury)
-    static let centimeterOfMercury = Unit(definedBy: DefaultUnits.centimeterOfMercury)
-    static let inchOfMercury = Unit(definedBy: DefaultUnits.inchOfMercury)
-    static let centimeterOfWater = Unit(definedBy: DefaultUnits.centimeterOfWater)
-    static let inchOfWater = Unit(definedBy: DefaultUnits.inchOfWater)
-
-    // MARK: Resistance
-
-    static let ohm = Unit(definedBy: DefaultUnits.ohm)
-    static let microohm = Unit(definedBy: DefaultUnits.microohm)
-    static let milliohm = Unit(definedBy: DefaultUnits.milliohm)
-    static let kiloohm = Unit(definedBy: DefaultUnits.kiloohm)
-    static let megaohm = Unit(definedBy: DefaultUnits.megaohm)
-
-    // MARK: Solid Angle
-
-    static let steradian = Unit(definedBy: DefaultUnits.steradian)
+    static let pascal = .kilogram / (.meter * .second.pow(2))
+    static let kilopascal = 1000.0 * .pascal
+    static let bar = 100 * .kilopascal
 
     // MARK: Temperature
 
-    static let kelvin = Unit(definedBy: DefaultUnits.kelvin)
-    static let celsius = Unit(definedBy: DefaultUnits.celsius)
-    static let fahrenheit = Unit(definedBy: DefaultUnits.fahrenheit)
-    static let rankine = Unit(definedBy: DefaultUnits.rankine)
-
     // MARK: Time
+    static let minute = 60 * .second
+    static let hour = 60 * .minute
+    static let day = 24 * .hour
+    static let week = 7 * .day
+}
 
-    static let second = Unit(definedBy: DefaultUnits.second)
-    static let nanosecond = Unit(definedBy: DefaultUnits.nanosecond)
-    static let microsecond = Unit(definedBy: DefaultUnits.microsecond)
-    static let millisecond = Unit(definedBy: DefaultUnits.millisecond)
-    static let minute = Unit(definedBy: DefaultUnits.minute)
-    static let hour = Unit(definedBy: DefaultUnits.hour)
-    static let day = Unit(definedBy: DefaultUnits.day)
-    static let week = Unit(definedBy: DefaultUnits.week)
-    static let year = Unit(definedBy: DefaultUnits.year)
-
-    // MARK: Velocity
-
-    static let knots = Unit(definedBy: DefaultUnits.knots)
-
-    // MARK: Volume
-
-    static let liter = Unit(definedBy: DefaultUnits.liter)
-    static let milliliter = Unit(definedBy: DefaultUnits.milliliter)
-    static let centiliter = Unit(definedBy: DefaultUnits.centiliter)
-    static let deciliter = Unit(definedBy: DefaultUnits.deciliter)
-    static let kiloliter = Unit(definedBy: DefaultUnits.kiloliter)
-    static let megaliter = Unit(definedBy: DefaultUnits.megaliter)
-    static let bushel = Unit(definedBy: DefaultUnits.bushel)
-    static let teaspoon = Unit(definedBy: DefaultUnits.teaspoon)
-    static let tablespoon = Unit(definedBy: DefaultUnits.tablespoon)
-    static let fluidOunce = Unit(definedBy: DefaultUnits.fluidOunce)
-    static let cup = Unit(definedBy: DefaultUnits.cup)
-    static let pint = Unit(definedBy: DefaultUnits.pint)
-    static let gallon = Unit(definedBy: DefaultUnits.gallon)
-    static let imperialFluidOunce = Unit(definedBy: DefaultUnits.imperialFluidOunce)
-    static let imperialCup = Unit(definedBy: DefaultUnits.imperialCup)
-    static let imperialPint = Unit(definedBy: DefaultUnits.imperialPint)
-    static let imperialGallon = Unit(definedBy: DefaultUnits.imperialGallon)
-    static let metricCup = Unit(definedBy: DefaultUnits.metricCup)
+public extension Unit {
+    static let celsius = Unit(dimension: [.kelvin: 1], constant: 273.15)
+    static let fahrenheit = Unit(
+        dimension: [.kelvin: 1],
+        coefficient: 5.0 / 9.0,
+        constant: (459.67 * 5.0 / 9.0)
+    )
 }
