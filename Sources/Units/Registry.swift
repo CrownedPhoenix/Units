@@ -336,5 +336,9 @@ internal class Registry {
         DefaultUnits.imperialPint,
         DefaultUnits.imperialGallon,
         DefaultUnits.metricCup,
+
+        // MARK: Unitless
+
+        DefaultUnits.percent
     ]
 }

@@ -245,4 +245,8 @@ public extension Unit {
     static let imperialPint = Unit(definedBy: DefaultUnits.imperialPint)
     static let imperialGallon = Unit(definedBy: DefaultUnits.imperialGallon)
     static let metricCup = Unit(definedBy: DefaultUnits.metricCup)
+
+    // MARK: Unitless
+
+    static let percent = Unit(definedBy: DefaultUnits.percent)
 }
